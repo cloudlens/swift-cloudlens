@@ -30,4 +30,4 @@ Import CloudLens module with
 
 Try example online with
 
-https://swiftlang.ng.bluemix.net/#/repl?gitPackage=https://github.com/cloudlens/CloudLens-Sample
+https://swiftlang.ng.bluemix.net/#/repl?gitPackage=https://github.com/cloudlens/swift-cloudlens
