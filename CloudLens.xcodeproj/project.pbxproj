@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5B78AD9D1E414A050036AB39 /* log.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5B78AD991E41499D0036AB39 /* log.txt */; };
+		5BFC8E231E415925007EE262 /* LICENSE.md in Sources */ = {isa = PBXBuildFile; fileRef = 5BFC8E211E415925007EE262 /* LICENSE.md */; };
+		5BFC8E241E415925007EE262 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 5BFC8E221E415925007EE262 /* README.md */; };
+		5BFC8E251E415992007EE262 /* log.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5B78AD991E41499D0036AB39 /* log.txt */; };
 		OBJ_25 /* LclJSONSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* LclJSONSerialization.swift */; };
 		OBJ_26 /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* SwiftyJSON.swift */; };
 		OBJ_33 /* CloudLens.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* CloudLens.swift */; };
@@ -48,7 +50,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				5B78AD9D1E414A050036AB39 /* log.txt in CopyFiles */,
+				5BFC8E251E415992007EE262 /* log.txt in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -56,6 +58,8 @@
 
 /* Begin PBXFileReference section */
 		5B78AD991E41499D0036AB39 /* log.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = log.txt; sourceTree = "<group>"; };
+		5BFC8E211E415925007EE262 /* LICENSE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
+		5BFC8E221E415925007EE262 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		OBJ_10 /* SwiftyJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftyJSON.swift; sourceTree = "<group>"; };
 		OBJ_12 /* CloudLens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudLens.swift; sourceTree = "<group>"; };
 		OBJ_14 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -94,14 +98,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		5B78AD9C1E4149FC0036AB39 /* Logs */ = {
-			isa = PBXGroup;
-			children = (
-				5B78AD991E41499D0036AB39 /* log.txt */,
-			);
-			name = Logs;
-			sourceTree = "<group>";
-		};
 		OBJ_11 /* CloudLens */ = {
 			isa = PBXGroup;
 			children = (
@@ -140,7 +136,9 @@
 		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
-				5B78AD9C1E4149FC0036AB39 /* Logs */,
+				5BFC8E211E415925007EE262 /* LICENSE.md */,
+				5BFC8E221E415925007EE262 /* README.md */,
+				5B78AD991E41499D0036AB39 /* log.txt */,
 				OBJ_6 /* Package.swift */,
 				OBJ_7 /* Sources */,
 				OBJ_15 /* Tests */,
@@ -274,6 +272,8 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_25 /* LclJSONSerialization.swift in Sources */,
+				5BFC8E231E415925007EE262 /* LICENSE.md in Sources */,
+				5BFC8E241E415925007EE262 /* README.md in Sources */,
 				OBJ_26 /* SwiftyJSON.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -25,3 +25,9 @@ Import CloudLens module with
 ## Xcode workspace
 
 `open CloudLens.xcworkspace`
+
+## IBM Swift Sandbox
+
+Try example online with
+
+https://swiftlang.ng.bluemix.net/#/repl?gitPackage=https://github.com/cloudlens/CloudLens-Sample
