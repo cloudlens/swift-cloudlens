@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5B78AD9D1E414A050036AB39 /* log.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5B78AD991E41499D0036AB39 /* log.txt */; };
 		OBJ_25 /* LclJSONSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* LclJSONSerialization.swift */; };
 		OBJ_26 /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* SwiftyJSON.swift */; };
 		OBJ_33 /* CloudLens.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* CloudLens.swift */; };
@@ -40,7 +41,21 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		5B78AD971E4149640036AB39 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				5B78AD9D1E414A050036AB39 /* log.txt in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		5B78AD991E41499D0036AB39 /* log.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = log.txt; sourceTree = "<group>"; };
 		OBJ_10 /* SwiftyJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftyJSON.swift; sourceTree = "<group>"; };
 		OBJ_12 /* CloudLens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudLens.swift; sourceTree = "<group>"; };
 		OBJ_14 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -79,6 +94,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5B78AD9C1E4149FC0036AB39 /* Logs */ = {
+			isa = PBXGroup;
+			children = (
+				5B78AD991E41499D0036AB39 /* log.txt */,
+			);
+			name = Logs;
+			sourceTree = "<group>";
+		};
 		OBJ_11 /* CloudLens */ = {
 			isa = PBXGroup;
 			children = (
@@ -114,15 +137,15 @@
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
+				5B78AD9C1E4149FC0036AB39 /* Logs */,
 				OBJ_6 /* Package.swift */,
 				OBJ_7 /* Sources */,
 				OBJ_15 /* Tests */,
 				OBJ_16 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_7 /* Sources */ = {
@@ -152,8 +175,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = OBJ_21 /* Build configuration list for PBXNativeTarget "SwiftyJSON" */;
 			buildPhases = (
-				OBJ_24 /* Sources */,
+				5B78AD961E41485F0036AB39 /* Run Script */,
 				OBJ_27 /* Frameworks */,
+				OBJ_24 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -187,6 +211,7 @@
 			buildPhases = (
 				OBJ_41 /* Sources */,
 				OBJ_43 /* Frameworks */,
+				5B78AD971E4149640036AB39 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -214,7 +239,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_16 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -225,6 +250,23 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5B78AD961E41485F0036AB39 /* Run Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "swift build --chdir \"$SRCROOT\"";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		OBJ_24 /* Sources */ = {
