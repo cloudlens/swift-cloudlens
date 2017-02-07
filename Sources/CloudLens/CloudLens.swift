@@ -44,7 +44,7 @@ extension JSON {
     ///
     /// - Parameter newArrayElement: The element to append to the array.
     mutating public func append(newArrayElement newElement: JSON) {
-        if self.arrayObject != nil {
+        if self.arrayObject == nil {
             self = []
         }
         self.arrayObject?.append(newElement.rawValue)
@@ -129,21 +129,15 @@ fileprivate let cloudLensString = "\u{2601}\u{1f50d}"
 
 fileprivate typealias Group = (name: String, type: String?, format: String?)
 
-/// A CloudLens script.
+/// A CloudLens stream is a lazy sequence of JSON objects.
 ///
-/// A CloudLens script is a pipeline of commands. The pipeline is initially empty.
-/// Commands are appended at the end of the pipeline by invoking the methods stream and process.
-/// The stream command generates a stream of JSON objects. It supports a variety of sources.
-/// The process command processes JSON objects in the stream,
-/// possibly transforming, inserting, or removing objects from the stream.
-///
-/// Commands are not executed immediately but rather when the run method is invoked on the script instance.
-/// Objects are streamed through the pipeline of commands one object at a time.
+/// The _process_ method adds a processing stage to the stream, possibly transforming, adding, or removing objects from the stream.
+/// Processing is delayed until the _run_ method is invoked on the Stream instance.
+/// Each object in the stream goes through every processing stage before processing begins for the next object.
 ///
 /// # Example:
 /// ````
-/// var sc = Script()
-/// sc.stream(messages: "foo", "bar")
+/// var sc = CLStream(messages: "foo", "bar")
 /// sc.process { obj in print(1, obj) }
 /// sc.process { obj in print(2, obj) }
 /// sc.run()
@@ -155,47 +149,42 @@ fileprivate typealias Group = (name: String, type: String?, format: String?)
 /// 1 {"message":"bar"}
 /// 2 {"message":"bar"}
 /// ````
-public class Script {
+public class CLStream {
     fileprivate var stream: () -> JSON? = { nil }
     
-    /// Creates a new script instance.
+    /// Creates a new CLStream instance from the content of the array.
     ///
-    /// The script is initially empty.
-    public init() {}
-    
-    /// Streams the array elements.
-    ///
-    /// - Parameter jsonArray: the JSON objects to stream.
-    public func stream(_ jsonArray: [JSON]) {
-        var slice: ArraySlice<JSON> = ArraySlice(jsonArray)
+    /// - Parameter jsonArray: the array of JSON objects to stream.
+    public init(_ jsonArray: [JSON]) {
+        var slice = ArraySlice(jsonArray)
         stream = { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
     }
-
-    /// Streams the messages.
-    ///
-    /// For each message m, a JSON object {"message":m} is inserted into the stream.
-    ///
-    /// - Parameter messages: the messages to stream.
-    public func stream(messages: String...) {
-        stream(messages: messages)
-    }
     
-    /// Streams the messages in the array.
+    /// Creates a new CLStream instance from an array of messages.
     ///
-    /// For each message m, a JSON object {"message":m} is inserted into the stream.
+    /// For each message m, a JSON object {"message":m} is added to the stream.
     ///
-    /// - Parameter messages: an array of messages to stream.
-    public func stream(messages: [String]) {
+    /// - Parameter messages: the array of messages to stream.
+    public init(messages: [String]) {
         var slice = ArraySlice(messages)
         stream = { slice.isEmpty ? nil as JSON? : ["message": slice.removeFirst()] }
     }
     
-    /// Streams the content of a text file line by line.
+    /// Creates a new CLStream instance from a list of messages.
     ///
-    /// For each line m, a JSON object {"message":m} is inserted into the stream.
+    /// For each message m, a JSON object {"message":m} is added to the stream.
+    ///
+    /// - Parameter messages: the messages to stream.
+    public convenience init(messages: String...) {
+        self.init(messages: messages)
+    }
+    
+    /// Creates a new CLStream instance by streaming the content of a text file line by line.
+    ///
+    /// For each line m, a JSON object {"message":m} is added to the stream.
     ///
     /// - Parameter file: the name of the file.
-    public func stream(file: String) {
+    public init(file: String) {
         guard let fd = fopen(file, "r") else {
             abort("Error opening file \"\(file)\"")
         }
@@ -233,20 +222,21 @@ public class Script {
         }
     }
 
-    /// Runs the script.
+    /// Iterates over the stream applying all processing stages to every object in the stream.
     ///
-    /// By default, the run method accumulates the objects in the output stream into an array and returns the resulting array.
-    /// The script is cleared and the stream command is invoked on the resulting array.
-    /// If history is set to false, the run method discards the output stream, clears the script, and returns an empty array.
+    /// By default, the _run_ method accumulates the objects in the output stream into an array and returns the resulting array.
+    /// The input stream is replaced with the output stream, i.e., future processing stages will apply to the output stream.
+    /// On the other hand, if _history_ is set to false, the run method discards the output stream as it is produced and returns an empty array. The input stream is replaced with an empty stream.
     ///
-    /// - Parameter history: whether to accumulate the output stream.
+    /// - Parameter history: whether to retain the output stream.
     @discardableResult public func run(withHistory history: Bool = true) -> [JSON] {
         if history {
             var jsonArray = [JSON]()
             while let json = stream() {
                 jsonArray.append(json)
             }
-            stream(jsonArray)
+            var slice = ArraySlice(jsonArray)
+            stream = { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
             return jsonArray
         } else {
             while stream() != nil {}
@@ -255,17 +245,48 @@ public class Script {
         }
     }
 
-    /// Processes stream elements.
+    /// Adds a processing stage to the stream.
     ///
-    /// - Parameter pattern: the regular expression to filter the stream with.
-    /// - Parameter key: the path of the field in the JSON object to pattern match against.
+    /// The _process_ method invokes an action on each object in the stream that satisfies the given predicate. Objects that do not satisfy the predicate are unaffected.
+    ///
+    /// The predicate is optional and assumed to be true if absent. The predicate is composed of a _pattern_ and a _key_.
+    /// If only a _pattern_ is specified the _key_ defaults to "message".
+    /// If only a _key_ is specified the _pattern_ defaults to the empty string.
+    /// The predicates tests whether the _key_ is a valid path in the JSON object and that the associated String value matches the regular expression _pattern_.
+    ///
+    /// The _pattern_ may define named groups. Upon a successful match, the JSON objects is augmented with new fields that bind each group name to the corresponding substring in the match.
+    ///
+    /// # Example:
+    /// ````
+    /// var sc = CLStream(messages: "warning", "error 42")
+    /// sc.process(onPattern: "error (?<error>\\d+)") { obj in print(obj) }
+    /// sc.run()
+    /// ````
+    /// # Output:
+    /// ````
+    /// {"error":"42","message":"error 42"}
+    /// ````
+    ///
+    /// The _pattern_ cannot contain anonymous groups.
+    /// A group type may be associated with the group name, for example: `"(?<error:Number>\\d+)"`.
+    /// Supported types are Number, String, and Date.
+    /// String is the default type.
+    /// A date format can be specified, for example: `"(?<date:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>^.{23})"`.
+    ///
+    /// The _action_ can remove the current object in the stream by assigning JSON.null to it, for example: "`process { obj in obj = .null }`". It can replace the object with mutiple objects using the _emit_ method.
+    ///
+    /// The _EndOfStreamKey_ may be used to defer an action until after the complete stream has been processed, for example: "`process(onKey: EndOfStream) { _ print(count) }`".
+    ///
+    /// - Parameter pattern: the regular expression.
+    /// - Parameter key: the path in the JSON object.
     /// - Parameter action: the action to invoke on matched objects.
-    public func process(onPattern pattern: String? = nil, onKey key: JSONSubscriptType..., execute action: ((inout JSON) -> ())? = nil) {
+    /// - Returns: _self_ to permit chaining processing stages.
+    @discardableResult public func process(onPattern pattern: String? = nil, onKey key: JSONSubscriptType..., execute action: ((inout JSON) -> ())? = nil) -> CLStream {
         guard key.isEmpty || !(key[0] is EndOfStreamType) else {
             if let action = action {
                 processAtEndOfStream(execute: action)
             }
-            return
+            return self
         }
         var body = action
         if let pattern = pattern, pattern != "" { // nil or empty patterns are no op
@@ -346,60 +367,20 @@ public class Script {
                 }
             }
         }
-    }
-
-    public static func invoke(_ lens: (Script) -> () -> (), _ jsonArray: [JSON]) {
-        let sc = Script()
-        sc.stream(jsonArray)
-        lens(sc)()
-        sc.run()
-    }
-
-    public static func invoke(_ lens: (Script) -> () -> (), _ jsonArray: inout [JSON]) {
-        let sc = Script()
-        sc.stream(jsonArray)
-        lens(sc)()
-        jsonArray = sc.run()
-    }
-
-    public static func invoke<T>(_ lens: (Script) -> (T) -> (), _ jsonArray: [JSON], _ t: T) {
-        let sc = Script()
-        sc.stream(jsonArray)
-        lens(sc)(t)
-        sc.run()
-    }
-
-    public static func invoke<T>(_ lens: (Script) -> (T) -> (), _ jsonArray: inout [JSON], _ t: T) {
-        let sc = Script()
-        sc.stream(jsonArray)
-        lens(sc)(t)
-        jsonArray = sc.run()
-    }
-
-    public static func invoke<T, U>(_ lens: (Script) -> (T, U) -> (), _ jsonArray: [JSON], _ t: T, _ u: U) {
-        let sc = Script()
-        sc.stream(jsonArray)
-        lens(sc)(t, u)
-        sc.run()
-    }
-
-    public static func invoke<T, U>(_ lens: (Script) -> (T, U) -> (), _ jsonArray: inout [JSON], _ t: T, _ u: U) {
-        let sc = Script()
-        sc.stream(jsonArray)
-        lens(sc)(t, u)
-        jsonArray = sc.run()
+        return self
     }
 
     /// Permits replacing the current object in the stream with the given array of objects.
     ///
     /// # Example:
+    /// Use _emit_ to repeat every object in the stream.
     /// ````
     /// sc.process { obj in
-    ///     obj = Script.emit([obj, obj])
+    ///     obj = Stream.emit([obj, obj])
     /// }
     /// ````
     ///
-    /// - Parameter jsonArray: the JSON objects to stream.
+    /// - Parameter jsonArray: the array of JSON objects to stream.
     public static func emit(_ jsonArray: [JSON]) -> JSON {
         return JSON([cloudLensString: JSON(jsonArray)])
     }

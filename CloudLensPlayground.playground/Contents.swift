@@ -16,25 +16,53 @@
  * limitations under the License.
  */
 
-//: CloudLens Playground
-
+import Foundation
+import SwiftyJSON
 import CloudLens
 
-let sc = Script()
+// construct a stream with four objects
+var sc = CLStream(messages: "error 42", "warning", "info ", "error 255")
 
-sc.stream(messages: "error 42", "warning", "info", "error 255")
+print("========== Detect errors ==========")
+
+// print the objects in the stream
 sc.process { obj in print(obj) }
+
+// detect errors and add "error" key with error code to object
+sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
+
+// nothing really happens until run is invoked
+sc.run()
+// observe the two output of the two actions are interleaved
+
+print("\n========== Count errors ==========")
+
+// the ouput stream of this run is now the input stream of the next run
+
+var count = 0
+
+// reuse the existing error key that was produced earlier
+sc.process(onKey: "error") { _ in count += 1 }
 
 sc.run()
 
-sc.process(onPattern: "error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
-var count = 0
+print(count, "error(s)")
+
+print("\n========== Report error count using deferred action ==========")
+
+count = 0
+
 sc.process(onKey: "error") { _ in count += 1 }
+
+// the EndOfStreamKey defers the action until after the complete stream has been processed
 sc.process(onKey: EndOfStreamKey) { _ in print(count, "error(s)") }
 
 sc.run()
 
-sc.process(onPattern: "info") { obj in obj = .null }
+print("\n========== Suppress info messages from the stream ==========")
+
+// assigning .null to obj removes the object from the stream
+sc.process(onPattern: "^info") { obj in obj = .null }
 sc.process { obj in print(obj) }
 
 sc.run()

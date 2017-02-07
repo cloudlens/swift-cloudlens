@@ -20,31 +20,62 @@ import Foundation
 import SwiftyJSON
 import CloudLens
 
-var sc = Script()
+// construct a stream with four objects
+var sc = CLStream(messages: "error 42", "warning", "info ", "error 255")
 
-sc.stream(messages: "error 42", "warning", "info", "error 255")
+print("========== Detect errors ==========")
 
+// print the objects in the stream
 sc.process { obj in print(obj) }
-sc.process(onPattern: "error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
 
+// detect errors and add "error" key with error code to object
+sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
+
+// nothing really happens until run is invoked
 sc.run()
+// observe the two output of the two actions are interleaved
+
+print("\n========== Count errors ==========")
+
+// the ouput stream of this run is now the input stream of the next run
 
 var count = 0
+
+// reuse the existing error key that was produced earlier
 sc.process(onKey: "error") { _ in count += 1 }
 
 sc.run()
 
 print(count, "error(s)")
 
-sc.process(onPattern: "info") { obj in obj = .null }
+print("\n========== Report error count using deferred action ==========")
+
+count = 0
+
+sc.process(onKey: "error") { _ in count += 1 }
+
+// the EndOfStreamKey defers the action until after the complete stream has been processed
+sc.process(onKey: EndOfStreamKey) { _ in print(count, "error(s)") }
+
+sc.run()
+
+print("\n========== Suppress info messages from the stream ==========")
+
+// assigning .null to obj removes the object from the stream
+sc.process(onPattern: "^info") { obj in obj = .null }
 sc.process { obj in print(obj) }
 
 sc.run()
 
-sc.stream(file: "log.txt")
+print("\n========== Process example log file ==========")
 
+// stream text file line by line
+sc = CLStream(file: "log.txt")
+
+// detect failed test
 sc.process(onPattern: "^(?<failure>.*) > .* FAILED") { obj in print("FAILED:", obj["failure"]) }
 
+// compute running time of tests and report long running tests
 var start = 0.0
 sc.process(onPattern: "Starting test (?<desc>.*) at (?<start:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.*)") { obj in
     start = obj["start"].doubleValue
@@ -54,18 +85,19 @@ sc.process(onPattern: "Finished test (?<desc>.*) at (?<end:Date[yyyy-MM-dd' 'HH:
     if obj["duration"].doubleValue > 12 { print(obj["duration"], "\t", obj["desc"]) }
 }
 
+// count failed tests
 var failed = 0
 sc.process(onKey: "failure") { _ in failed += 1 }
 sc.process(onKey: EndOfStreamKey) { _ in print(failed, "failed tests") }
 
-sc.process(onPattern: "^$") { obj in obj = .null }
-
+// compute cumulated execution time
 var totalTime = 0.0
 sc.process(onKey: "duration") { obj in totalTime += obj["duration"].doubleValue}
 sc.process(onKey: EndOfStreamKey) { _ in print("Total Time:", totalTime, "seconds") }
 
 sc.run()
 
+// report long running tests relative to total execution time
 sc.process(onKey: "duration") { obj in
     obj["prop"].doubleValue = obj["duration"].doubleValue * 100.0 / totalTime
     if obj["prop"].doubleValue > 10 { print("\(obj["prop"])%", obj["desc"]) }
@@ -73,12 +105,18 @@ sc.process(onKey: "duration") { obj in
 
 sc.run()
 
-extension Script {
-    func grep(pattern: String) {
-        process(onPattern: pattern) { obj in print(obj["message"]) }
+print("\n========== Filter stack traces of failed tests ==========")
+
+// define stream processors
+extension CLStream {
+    
+    // print messages matching given pattern
+    @discardableResult func grep(pattern: String) -> CLStream {
+        return process(onPattern: pattern) { obj in print(obj["message"]) }
     }
 
-    func group(pattern: String) {
+    // group objects according to pattern
+    @discardableResult func group(pattern: String) -> CLStream {
         var group: JSON?
         process(onPattern: pattern) { obj in // entry processes regex
             group?["group"].append(newArrayElement: obj) // append entry to group array
@@ -89,15 +127,18 @@ extension Script {
             group = obj
             obj = last
         }
-        process(onKey: EndOfStreamKey) { obj in obj = group ?? .null }
+        return process(onKey: EndOfStreamKey) { obj in obj = group ?? .null }
     }
 }
 
+// group indented log lines (stack traces)
 sc.group(pattern: "^\\s")
 
+// for each failed test filter corresponding stack traces with pattern of interest
 sc.process(onKey: "failure") { obj in
     print("FAILED", obj["failure"])
-    Script.invoke(Script.grep, obj["group"].arrayValue, "at .*\\(Wsk.*\\)")
+    CLStream(obj["group"].arrayValue).grep(pattern: "at .*\\(Wsk.*\\)").run()
 }
 
 sc.run()
+
