@@ -37,17 +37,38 @@ extension JSON: CustomReflectable {
 }
 
 extension JSON {
+    /// Adds a new element at the end of the JSON array.
+    ///
+    /// If the JSON object is not already an array, it is replaced
+    /// with an array containing only the specified element.
+    ///
+    /// - Parameter newArrayElement: The element to append to the array.
     mutating public func append(newArrayElement newElement: JSON) {
-        if self.arrayObject == nil {
+        if self.arrayObject != nil {
             self = []
         }
         self.arrayObject?.append(newElement.rawValue)
     }
 
+    /// Removes the given key and its associated value from the JSON dictionary.
+    ///
+    /// If the JSON object is not a dictionary, nothing happens.
+    ///
+    /// - Parameter key: The key to remove along with its associated value.
     mutating public func removeValue(forKey key: String) {
         let _ = self.dictionaryObject?.removeValue(forKey: key)
     }
 }
+
+/// The type of the end of stream key.
+public struct EndOfStreamType: JSONSubscriptType {
+    fileprivate init() {}
+    
+    public var jsonKey:JSONKey { return JSONKey.index(Int.max) }
+}
+
+/// A key that denotes the end of the stream.
+public let EndOfStreamKey = EndOfStreamType()
 
 #if os(Linux)
     fileprivate typealias NSRegularExpression = RegularExpression
@@ -61,7 +82,7 @@ extension JSON {
 #endif
 
 extension String {
-    func substring(range: NSRange?) -> String? {
+    fileprivate func substring(range: NSRange?) -> String? {
         guard let range = range, range.location != NSNotFound else { return nil }
         return self.substring(with: self.index(self.startIndex, offsetBy: range.location)
             ..< self.index(self.startIndex, offsetBy: range.location + range.length))
@@ -108,25 +129,72 @@ fileprivate let cloudLensString = "\u{2601}\u{1f50d}"
 
 fileprivate typealias Group = (name: String, type: String?, format: String?)
 
+/// A CloudLens script.
+///
+/// A CloudLens script is a pipeline of commands. The pipeline is initially empty.
+/// Commands are appended at the end of the pipeline by invoking the methods stream and process.
+/// The stream command generates a stream of JSON objects. It supports a variety of sources.
+/// The process command processes JSON objects in the stream,
+/// possibly transforming, inserting, or removing objects from the stream.
+///
+/// Commands are not executed immediately but rather when the run method is invoked on the script instance.
+/// Objects are streamed through the pipeline of commands one object at a time.
+///
+/// # Example:
+/// ````
+/// var sc = Script()
+/// sc.stream(messages: "foo", "bar")
+/// sc.process { obj in print(1, obj) }
+/// sc.process { obj in print(2, obj) }
+/// sc.run()
+/// ````
+/// # Output:
+/// ````
+/// 1 {"message":"foo"}
+/// 2 {"message":"foo"}
+/// 1 {"message":"bar"}
+/// 2 {"message":"bar"}
+/// ````
 public class Script {
     fileprivate var stream: () -> JSON? = { nil }
     
+    /// Creates a new script instance.
+    ///
+    /// The script is initially empty.
     public init() {}
     
+    /// Streams the array elements.
+    ///
+    /// - Parameter jsonArray: the JSON objects to stream.
     public func stream(_ jsonArray: [JSON]) {
         var slice: ArraySlice<JSON> = ArraySlice(jsonArray)
         stream = { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
     }
 
+    /// Streams the messages.
+    ///
+    /// For each message m, a JSON object {"message":m} is inserted into the stream.
+    ///
+    /// - Parameter messages: the messages to stream.
     public func stream(messages: String...) {
         stream(messages: messages)
     }
     
+    /// Streams the messages in the array.
+    ///
+    /// For each message m, a JSON object {"message":m} is inserted into the stream.
+    ///
+    /// - Parameter messages: an array of messages to stream.
     public func stream(messages: [String]) {
         var slice = ArraySlice(messages)
         stream = { slice.isEmpty ? nil as JSON? : ["message": slice.removeFirst()] }
     }
     
+    /// Streams the content of a text file line by line.
+    ///
+    /// For each line m, a JSON object {"message":m} is inserted into the stream.
+    ///
+    /// - Parameter file: the name of the file.
     public func stream(file: String) {
         guard let fd = fopen(file, "r") else {
             abort("Error opening file \"\(file)\"")
@@ -144,7 +212,7 @@ public class Script {
         }
     }
     
-    fileprivate func processAtEnd(execute action: @escaping (inout JSON) -> ()) {
+    fileprivate func processAtEndOfStream(execute action: @escaping (inout JSON) -> ()) {
         let last = stream
         var slice = ArraySlice([JSON]())
         var endOfStream = false
@@ -165,8 +233,15 @@ public class Script {
         }
     }
 
-    @discardableResult public func run(withHistory: Bool = true) -> [JSON] {
-        if withHistory {
+    /// Runs the script.
+    ///
+    /// By default, the run method accumulates the objects in the output stream into an array and returns the resulting array.
+    /// The script is cleared and the stream command is invoked on the resulting array.
+    /// If history is set to false, the run method discards the output stream, clears the script, and returns an empty array.
+    ///
+    /// - Parameter history: whether to accumulate the output stream.
+    @discardableResult public func run(withHistory history: Bool = true) -> [JSON] {
+        if history {
             var jsonArray = [JSON]()
             while let json = stream() {
                 jsonArray.append(json)
@@ -180,12 +255,17 @@ public class Script {
         }
     }
 
-    public func process(onPattern pattern: String? = nil, onKey key: JSONSubscriptType..., atEnd: Bool = false, execute action: ((inout JSON) -> ())? = nil) {
-        guard !atEnd else {
+    /// Processes stream elements.
+    ///
+    /// - Parameter pattern: the regular expression to filter the stream with.
+    /// - Parameter key: the path of the field in the JSON object to pattern match against.
+    /// - Parameter action: the action to invoke on matched objects.
+    public func process(onPattern pattern: String? = nil, onKey key: JSONSubscriptType..., execute action: ((inout JSON) -> ())? = nil) {
+        guard key.isEmpty || !(key[0] is EndOfStreamType) else {
             if let action = action {
-                processAtEnd(execute: action)
+                processAtEndOfStream(execute: action)
             }
-            return;
+            return
         }
         var body = action
         if let pattern = pattern, pattern != "" { // nil or empty patterns are no op
@@ -310,6 +390,16 @@ public class Script {
         jsonArray = sc.run()
     }
 
+    /// Permits replacing the current object in the stream with the given array of objects.
+    ///
+    /// # Example:
+    /// ````
+    /// sc.process { obj in
+    ///     obj = Script.emit([obj, obj])
+    /// }
+    /// ````
+    ///
+    /// - Parameter jsonArray: the JSON objects to stream.
     public static func emit(_ jsonArray: [JSON]) -> JSON {
         return JSON([cloudLensString: JSON(jsonArray)])
     }

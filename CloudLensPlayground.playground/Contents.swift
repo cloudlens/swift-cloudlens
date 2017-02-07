@@ -30,7 +30,7 @@ sc.run()
 sc.process(onPattern: "error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
 var count = 0
 sc.process(onKey: "error") { _ in count += 1 }
-sc.process(atEnd: true) { _ in print(count, "error(s)") }
+sc.process(onKey: EndOfStreamKey) { _ in print(count, "error(s)") }
 
 sc.run()
 

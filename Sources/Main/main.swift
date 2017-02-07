@@ -56,13 +56,13 @@ sc.process(onPattern: "Finished test (?<desc>.*) at (?<end:Date[yyyy-MM-dd' 'HH:
 
 var failed = 0
 sc.process(onKey: "failure") { _ in failed += 1 }
-sc.process(atEnd: true) { _ in print(failed, "failed tests") }
+sc.process(onKey: EndOfStreamKey) { _ in print(failed, "failed tests") }
 
 sc.process(onPattern: "^$") { obj in obj = .null }
 
 var totalTime = 0.0
 sc.process(onKey: "duration") { obj in totalTime += obj["duration"].doubleValue}
-sc.process(atEnd: true) { _ in print("Total Time:", totalTime, "seconds") }
+sc.process(onKey: EndOfStreamKey) { _ in print("Total Time:", totalTime, "seconds") }
 
 sc.run()
 
@@ -89,7 +89,7 @@ extension Script {
             group = obj
             obj = last
         }
-        process(atEnd: true) { obj in obj = group ?? .null }
+        process(onKey: EndOfStreamKey) { obj in obj = group ?? .null }
     }
 }
 
