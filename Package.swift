@@ -37,3 +37,4 @@ products.append(
     Product(name: "CloudLens", type: .Library(.Dynamic), modules: "CloudLens")
 )
 #endif
+// delete the #if/#endif pair on Linux to build the CloudLens library for the Swift REPL
