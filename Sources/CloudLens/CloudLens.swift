@@ -27,7 +27,7 @@ extension JSON: CustomStringConvertible {
 
 extension JSON: CustomReflectable {
     public var customMirror: Mirror {
-        switch(self.type) {
+        switch self.type {
         case .number:
             return Mirror(reflecting: self.stringValue)
         default:
@@ -64,7 +64,7 @@ extension JSON {
 public enum CLKey: JSONSubscriptType {
     /// A key that denotes the end of the stream.
     case endOfStream
-    
+
     public var jsonKey: JSONKey {
         switch self {
         case .endOfStream:
@@ -99,20 +99,20 @@ fileprivate func abort(_ errorMessage: String) -> Never {
 
 fileprivate struct Regex {
     let regex: NSRegularExpression
-    
+
     init(pattern: String) {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
             abort("Error in regular expression \"\(pattern)\"")
         }
         self.regex = regex
     }
-    
+
     func matches(in string: String) -> [NSTextCheckingResult] {
-        return regex.matches(in: string, options: [], range: NSMakeRange(0, string.characters.count))
+        return regex.matches(in: string, options: [], range: NSRange(location: 0, length: string.characters.count))
     }
-    
+
     func firstMatch(in string: String) -> NSTextCheckingResult? {
-        return regex.firstMatch(in: string, options: [], range: NSMakeRange(0, string.characters.count))
+        return regex.firstMatch(in: string, options: [], range: NSRange(location: 0, length: string.characters.count))
     }
 
     func numberOfCaptureGroups() -> Int {
@@ -120,7 +120,7 @@ fileprivate struct Regex {
     }
 
     func stringByReplacingMatches(in string: String, withTemplate templ: String) -> String {
-        return regex.stringByReplacingMatches(in: string, options: [], range: NSMakeRange(0, string.characters.count), withTemplate: templ)
+        return regex.stringByReplacingMatches(in: string, options: [], range: NSRange(location: 0, length: string.characters.count), withTemplate: templ)
     }
 }
 
@@ -154,7 +154,7 @@ fileprivate typealias Group = (name: String, type: String?, format: String?)
 /// ````
 public class CLStream {
     fileprivate var stream: () -> JSON? = { nil }
-    
+
     /// Creates a new CLStream instance from the content of the array.
     ///
     /// - Parameter jsonArray: the array of JSON objects to stream.
@@ -162,7 +162,7 @@ public class CLStream {
         var slice = ArraySlice(jsonArray)
         stream = { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
     }
-    
+
     /// Creates a new CLStream instance from an array of messages.
     ///
     /// For each message m, a JSON object {"message":m} is added to the stream.
@@ -172,7 +172,7 @@ public class CLStream {
         var slice = ArraySlice(messages)
         stream = { slice.isEmpty ? nil as JSON? : ["message": slice.removeFirst()] }
     }
-    
+
     /// Creates a new CLStream instance from a list of messages.
     ///
     /// For each message m, a JSON object {"message":m} is added to the stream.
@@ -181,7 +181,7 @@ public class CLStream {
     public convenience init(messages: String...) {
         self.init(messages: messages)
     }
-    
+
     /// Creates a new CLStream instance by streaming the content of a text file line by line.
     ///
     /// For each line m, a JSON object {"message":m} is added to the stream.
@@ -203,8 +203,33 @@ public class CLStream {
             return nil
         }
     }
-    
-    fileprivate func processAtEndOfStream(execute action: @escaping (inout JSON) -> ()) {
+
+    fileprivate func executeOnStream(onKey key: [JSONSubscriptType], _ action: @escaping (inout JSON) -> Void) {
+        let last = stream
+        var slice = ArraySlice([JSON]())
+        stream = {
+            while true {
+                if !slice.isEmpty { return slice.removeFirst() }
+                if var json = last() {
+                    if json[key].exists() {
+                        action(&json)
+                        if json == .null {
+                            slice = ArraySlice([])
+                            continue
+                        }
+                        if let jsonArray = json[cloudLensString].array {
+                            slice = ArraySlice(jsonArray)
+                            continue
+                        }
+                    }
+                    return json
+                }
+                return nil
+            }
+        }
+    }
+
+    fileprivate func executeAtEndOfStream(_ action: @escaping (inout JSON) -> Void) {
         let last = stream
         var slice = ArraySlice([JSON]())
         var endOfStream = false
@@ -284,93 +309,78 @@ public class CLStream {
     /// - Parameter key: the path in the JSON object.
     /// - Parameter action: the action to invoke on matched objects.
     /// - Returns: _self_ to permit chaining processing stages.
-    @discardableResult public func process(onPattern pattern: String? = nil, onKey key: JSONSubscriptType..., execute action: ((inout JSON) -> ())? = nil) -> CLStream {
-        guard key.first as? CLKey != .endOfStream else {
+    @discardableResult public func process(onPattern pattern: String = "", onKey key: JSONSubscriptType..., execute action: ((inout JSON) -> Void)? = nil) -> CLStream {
+        if key.first as? CLKey == .endOfStream {
             if let action = action {
-                processAtEndOfStream(execute: action)
+                executeAtEndOfStream(action)
             }
-            return self
-        }
-        var body = action
-        if let pattern = pattern, pattern != "" { // nil or empty patterns are no op
-            let key = key.isEmpty ? ["message"] : key
-            if pattern.rangeOfCharacter(from: complexCharacters) == nil { // simple pattern
-                if let action = action {
-                    body = { json in
-                        if let message = json[key].string, message.contains(pattern) {
-                            action(&json)
-                        }
-                    }
-                }
-            } else { // regex
-                var groups = [Group]()
-                for match in groupPattern.matches(in: pattern) {
-                    guard let name = pattern.substring(range: match.rangeAt(1)) else {
-                        abort("Error in regular expression \"\(pattern)\"")
-                    }
-                    groups.append((name: name, type: pattern.substring(range: match.rangeAt(2)), format: pattern.substring(range: match.rangeAt(3))))
-                }
-                let regex = Regex(pattern: groupPattern.stringByReplacingMatches(in: pattern, withTemplate: "\\($4\\)"))
-                guard groups.count == regex.numberOfCaptureGroups() else {
-                    abort("Unnamed groups in regular expression \"\(pattern)\"")
-                }
-                body = { json in
-                    if let message = json[key].string, let match = regex.firstMatch(in: message) {
-                        for n in 1..<match.numberOfRanges {
-                            let string = message.substring(range: match.rangeAt(n))
-                            let (name, type, format) = groups[n-1]
-                            if let string = string {
-                                json[name].string = string
-                                if let type = type {
-                                    switch type {
-                                    case "Date":
-                                        let dateFormatter = DateFormatter()
-                                        if let format = format {
-                                            dateFormatter.dateFormat = format
-                                        }
-                                        json[name].double = dateFormatter.date(from: string)?.timeIntervalSince1970
-                                    case "Number":
-                                        json[name].number = NumberFormatter().number(from: string)
-                                    default:
-                                        ()
-                                    }
-                                }
-                            } else {
-                                json.removeValue(forKey: name)
-                            }
-                        }
-                        if let action = action {
-                            action(&json)
-                        }
-                    }
+        } else {
+            var key = key
+            var action = action
+            if pattern != "" { // empty pattern always matches
+                key = key.isEmpty ? ["message"] : key
+                if pattern.rangeOfCharacter(from: complexCharacters) == nil {
+                    action = match(substring: pattern, onKey: key, execute: action)
+                } else {
+                    action = match(regex: pattern, onKey: key, execute: action)
                 }
             }
-        }
-        if let body = body {
-            let last = stream
-            var slice = ArraySlice([JSON]())
-            stream = {
-                while true {
-                    if !slice.isEmpty { return slice.removeFirst() }
-                    if var json = last() {
-                        if json[key].exists() {
-                            body(&json)
-                            if json == .null {
-                                slice = ArraySlice([])
-                                continue
-                            }
-                            if let jsonArray = json[cloudLensString].array {
-                                slice = ArraySlice(jsonArray)
-                                continue
-                            }
-                        }
-                        return json
-                    }
-                    return nil
-                }
+            if let action = action {
+                executeOnStream(onKey: key, action)
             }
         }
         return self
+    }
+
+    fileprivate func match(substring pattern: String, onKey key: [JSONSubscriptType], execute action: ((inout JSON) -> Void)? = nil) -> ((inout JSON) -> Void)? {
+        if let action = action {
+            return { json in
+                if let message = json[key].string, message.contains(pattern) {
+                    action(&json)
+                }
+            }
+        } else {
+            return nil
+        }
+    }
+
+    fileprivate func match(regex pattern: String, onKey key: [JSONSubscriptType], execute action: ((inout JSON) -> Void)? = nil) -> ((inout JSON) -> Void)? {
+        var groups = [Group]()
+        for match in groupPattern.matches(in: pattern) {
+            guard let name = pattern.substring(range: match.rangeAt(1)) else {
+                abort("Error in regular expression \"\(pattern)\"")
+            }
+            groups.append((name: name, type: pattern.substring(range: match.rangeAt(2)), format: pattern.substring(range: match.rangeAt(3))))
+        }
+        let regex = Regex(pattern: groupPattern.stringByReplacingMatches(in: pattern, withTemplate: "\\($4\\)"))
+        guard groups.count == regex.numberOfCaptureGroups() else {
+            abort("Unnamed groups in regular expression \"\(pattern)\"")
+        }
+        return { json in
+            if let message = json[key].string, let match = regex.firstMatch(in: message) {
+                for n in 1..<match.numberOfRanges {
+                    let string = message.substring(range: match.rangeAt(n))
+                    let (name, type, format) = groups[n-1]
+                    if let string = string {
+                        switch type {
+                        case .some("Date"):
+                            let dateFormatter = DateFormatter()
+                            dateFormatter.dateFormat = format
+                            json[name].double = dateFormatter.date(from: string)?.timeIntervalSince1970
+                        case .some("Number"):
+                            json[name].number = NumberFormatter().number(from: string)
+                        default:
+                            json[name].string = string
+                        }
+                    } else {
+                        json.removeValue(forKey: name)
+                    }
+                }
+                if let action = action {
+                    action(&json)
+                }
+            }
+        }
     }
 
     /// Permits replacing the current object in the stream with the given array of objects.

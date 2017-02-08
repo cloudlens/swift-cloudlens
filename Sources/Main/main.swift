@@ -113,7 +113,7 @@ print("\n========== Filter stack traces of failed tests ==========")
 
 // define stream processors
 extension CLStream {
-    
+
     // print messages matching given pattern
     @discardableResult func grep(pattern: String) -> CLStream {
         return process(onPattern: pattern) { obj in print(obj["message"]) }
