@@ -1,0 +1,12 @@
+language: objective-c
+
+branches:
+ only:
+ - master
+
+xcode_project: CloudLens.xcodeproj
+xcode_scheme: Main
+osx_image: xcode8.2
+
+script:
+- xcodebuild clean build -project CloudLens.xcodeproj -scheme Main
