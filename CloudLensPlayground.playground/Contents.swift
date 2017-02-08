@@ -35,7 +35,7 @@ sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", ob
 sc.run()
 // observe that the outputs of the two actions are interleaved
 
-print("\n========== Count errors ==========")
+print("\r\n========== Count errors ==========")
 
 // the ouput stream of this run is now the input stream of the next run
 
@@ -48,7 +48,7 @@ sc.run()
 
 print(count, "error(s)")
 
-print("\n========== Report error count using deferred action ==========")
+print("\r\n========== Report error count using deferred action ==========")
 
 count = 0
 
@@ -59,7 +59,7 @@ sc.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
 
 sc.run()
 
-print("\n========== Suppress info messages from the stream ==========")
+print("\r\n========== Suppress info messages from the stream ==========")
 
 // assigning .null to obj removes the object from the stream
 sc.process(onPattern: "^info") { obj in obj = .null }
