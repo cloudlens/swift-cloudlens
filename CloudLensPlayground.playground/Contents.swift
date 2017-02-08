@@ -54,8 +54,8 @@ count = 0
 
 sc.process(onKey: "error") { _ in count += 1 }
 
-// the EndOfStreamKey defers the action until after the complete stream has been processed
-sc.process(onKey: EndOfStreamKey) { _ in print(count, "error(s)") }
+// the key CLKey.endOfStream defers the action until after the complete stream has been processed
+sc.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
 
 sc.run()
 

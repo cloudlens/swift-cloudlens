@@ -60,15 +60,18 @@ extension JSON {
     }
 }
 
-/// The type of the end of stream key.
-public struct EndOfStreamType: JSONSubscriptType {
-    fileprivate init() {}
+/// The type of special keys.
+public enum CLKey: JSONSubscriptType {
+    /// A key that denotes the end of the stream.
+    case endOfStream
     
-    public var jsonKey:JSONKey { return JSONKey.index(Int.max) }
+    public var jsonKey: JSONKey {
+        switch self {
+        case .endOfStream:
+            return JSONKey.index(-1)
+        }
+    }
 }
-
-/// A key that denotes the end of the stream.
-public let EndOfStreamKey = EndOfStreamType()
 
 #if os(Linux)
     fileprivate typealias NSRegularExpression = RegularExpression
@@ -282,7 +285,7 @@ public class CLStream {
     /// - Parameter action: the action to invoke on matched objects.
     /// - Returns: _self_ to permit chaining processing stages.
     @discardableResult public func process(onPattern pattern: String? = nil, onKey key: JSONSubscriptType..., execute action: ((inout JSON) -> ())? = nil) -> CLStream {
-        guard key.isEmpty || !(key[0] is EndOfStreamType) else {
+        guard key.first as? CLKey != .endOfStream else {
             if let action = action {
                 processAtEndOfStream(execute: action)
             }

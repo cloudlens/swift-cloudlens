@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5BFC8E231E415925007EE262 /* LICENSE.md in Sources */ = {isa = PBXBuildFile; fileRef = 5BFC8E211E415925007EE262 /* LICENSE.md */; };
-		5BFC8E241E415925007EE262 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 5BFC8E221E415925007EE262 /* README.md */; };
 		5BFC8E251E415992007EE262 /* log.txt in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5B78AD991E41499D0036AB39 /* log.txt */; };
 		OBJ_25 /* LclJSONSerialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* LclJSONSerialization.swift */; };
 		OBJ_26 /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* SwiftyJSON.swift */; };
@@ -272,8 +270,6 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_25 /* LclJSONSerialization.swift in Sources */,
-				5BFC8E231E415925007EE262 /* LICENSE.md in Sources */,
-				5BFC8E241E415925007EE262 /* README.md in Sources */,
 				OBJ_26 /* SwiftyJSON.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

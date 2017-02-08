@@ -54,8 +54,8 @@ count = 0
 
 sc.process(onKey: "error") { _ in count += 1 }
 
-// the EndOfStreamKey defers the action until after the complete stream has been processed
-sc.process(onKey: EndOfStreamKey) { _ in print(count, "error(s)") }
+// the key CLKey.endOfStream defers the action until after the complete stream has been processed
+sc.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
 
 sc.run()
 
@@ -92,12 +92,12 @@ sc.process(onPattern: "Finished test (?<description>.*) at (?<end:Date[yyyy-MM-d
 // count failed tests
 var failed = 0
 sc.process(onKey: "failure") { _ in failed += 1 }
-sc.process(onKey: EndOfStreamKey) { _ in print(failed, "failed tests") }
+sc.process(onKey: CLKey.endOfStream) { _ in print(failed, "failed tests") }
 
 // compute cumulated execution time
 var totalTime = 0.0
 sc.process(onKey: "duration") { obj in totalTime += obj["duration"].doubleValue}
-sc.process(onKey: EndOfStreamKey) { _ in print("Total Time:", totalTime, "seconds") }
+sc.process(onKey: CLKey.endOfStream) { _ in print("Total Time:", totalTime, "seconds") }
 
 sc.run()
 
@@ -132,7 +132,7 @@ extension CLStream {
             group = obj // obj is new most recent unmatched object
             obj = last // emit previous unmatched object
         }
-        return process(onKey: EndOfStreamKey) { obj in obj = group ?? .null }
+        return process(onKey: CLKey.endOfStream) { obj in obj = group ?? .null }
     }
 }
 
@@ -146,4 +146,3 @@ sc.process(onKey: "failure") { obj in
 }
 
 sc.run()
-
