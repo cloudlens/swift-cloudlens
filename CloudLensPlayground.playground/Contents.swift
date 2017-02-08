@@ -21,18 +21,18 @@ import SwiftyJSON
 import CloudLens
 
 // construct a stream with four objects
-var sc = CLStream(messages: "error 42", "warning", "info ", "error 255")
+var stream = CLStream(messages: "error 42", "warning", "info ", "error 255")
 
 print("========== Detect errors ==========")
 
 // print the objects in the stream
-sc.process { obj in print(obj) }
+stream.process { obj in print(obj) }
 
 // detect errors and add "error" key with error code to object
-sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
+stream.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
 
 // nothing really happens until run is invoked
-sc.run()
+stream.run()
 // observe that the outputs of the two actions are interleaved
 
 print("\r\n========== Count errors ==========")
@@ -42,9 +42,9 @@ print("\r\n========== Count errors ==========")
 var count = 0
 
 // reuse the existing error key that was produced earlier
-sc.process(onKey: "error") { _ in count += 1 }
+stream.process(onKey: "error") { _ in count += 1 }
 
-sc.run()
+stream.run()
 
 print(count, "error(s)")
 
@@ -52,17 +52,17 @@ print("\r\n========== Report error count using deferred action ==========")
 
 count = 0
 
-sc.process(onKey: "error") { _ in count += 1 }
+stream.process(onKey: "error") { _ in count += 1 }
 
 // the key CLKey.endOfStream defers the action until after the complete stream has been processed
-sc.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
+stream.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
 
-sc.run()
+stream.run()
 
 print("\r\n========== Suppress info messages from the stream ==========")
 
 // assigning .null to obj removes the object from the stream
-sc.process(onPattern: "^info") { obj in obj = .null }
-sc.process { obj in print(obj) }
+stream.process(onPattern: "^info") { obj in obj = .null }
+stream.process { obj in print(obj) }
 
-sc.run()
+stream.run()

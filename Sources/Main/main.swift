@@ -19,20 +19,21 @@
 import Foundation
 import SwiftyJSON
 import CloudLens
+import JavaScriptCore
 
 // construct a stream with four objects
-var sc = CLStream(messages: "error 42", "warning", "info ", "error 255")
+var stream = CLStream(messages: "error 42", "warning", "info ", "error 255")
 
 print("========== Detect errors ==========")
 
 // print the objects in the stream
-sc.process { obj in print(obj) }
+stream.process { obj in print(obj) }
 
 // detect errors and add "error" key with error code to object
-sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
+stream.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", obj["error"], "detected") }
 
 // nothing really happens until run is invoked
-sc.run()
+stream.run()
 // observe that the outputs of the two actions are interleaved
 
 print("\r\n========== Count errors ==========")
@@ -42,9 +43,9 @@ print("\r\n========== Count errors ==========")
 var count = 0
 
 // reuse the existing error key that was produced earlier
-sc.process(onKey: "error") { _ in count += 1 }
+stream.process(onKey: "error") { _ in count += 1 }.run()
 
-sc.run()
+stream.run()
 
 print(count, "error(s)")
 
@@ -52,62 +53,62 @@ print("\r\n========== Report error count using deferred action ==========")
 
 count = 0
 
-sc.process(onKey: "error") { _ in count += 1 }
+stream.process(onKey: "error") { _ in count += 1 }
 
 // the key CLKey.endOfStream defers the action until after the complete stream has been processed
-sc.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
+stream.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
 
-sc.run()
+stream.run()
 
 print("\r\n========== Suppress info messages from the stream ==========")
 
 // assigning .null to obj removes the object from the stream
-sc.process(onPattern: "^info") { obj in obj = .null }
-sc.process { obj in print(obj) }
+stream.process(onPattern: "^info") { obj in obj = .null }
+stream.process { obj in print(obj) }
 
-sc.run()
+stream.run()
 
 print("\r\n========== Process example log file ==========")
 
 // stream text file line by line
-sc = CLStream(file: "log.txt")
+stream = CLStream(file: "log.txt")
 
 // detect and tag failed tests
-sc.process(onPattern: "^(?<failure>.*) > .* FAILED") { obj in print("FAILED:", obj["failure"]) }
+stream.process(onPattern: "^(?<failure>.*) > .* FAILED") { obj in print("FAILED:", obj["failure"]) }
 
 // compute running time of tests and report long running tests
 var start = 0.0
 
 // parse timestamp into a time interval since 1970 (seconds)
-sc.process(onPattern: "Starting test (?<description>.*) at (?<start:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.{23})") { obj in
+stream.process(onPattern: "Starting test (?<description>.*) at (?<start:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.{23})") { obj in
     start = obj["start"].doubleValue
 }
 
 // report tests that run for more than 12 seconds
-sc.process(onPattern: "Finished test (?<description>.*) at (?<end:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.{23})") { obj in
+stream.process(onPattern: "Finished test (?<description>.*) at (?<end:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.{23})") { obj in
     obj["duration"].doubleValue = obj["end"].doubleValue - start
     if obj["duration"].doubleValue > 12 { print(obj["duration"], "\t", obj["description"]) }
 }
 
 // count failed tests
 var failed = 0
-sc.process(onKey: "failure") { _ in failed += 1 }
-sc.process(onKey: CLKey.endOfStream) { _ in print(failed, "failed tests") }
+stream.process(onKey: "failure") { _ in failed += 1 }
+stream.process(onKey: CLKey.endOfStream) { _ in print(failed, "failed tests") }
 
 // compute cumulated execution time
 var totalTime = 0.0
-sc.process(onKey: "duration") { obj in totalTime += obj["duration"].doubleValue}
-sc.process(onKey: CLKey.endOfStream) { _ in print("Total Time:", totalTime, "seconds") }
+stream.process(onKey: "duration") { obj in totalTime += obj["duration"].doubleValue}
+stream.process(onKey: CLKey.endOfStream) { _ in print("Total Time:", totalTime, "seconds") }
 
-sc.run()
+stream.run()
 
 // report long running tests relative to total execution time (above 10%)
-sc.process(onKey: "duration") { obj in
+stream.process(onKey: "duration") { obj in
     obj["percentage"].doubleValue = obj["duration"].doubleValue * 100.0 / totalTime
     if obj["percentage"].doubleValue > 10 { print("\(obj["percentage"])%", obj["description"]) }
 }
 
-sc.run()
+stream.run()
 
 print("\r\n========== Filter stack traces of failed tests ==========")
 
@@ -137,12 +138,12 @@ extension CLStream {
 }
 
 // group indented log lines (stack traces)
-sc.group(pattern: "^\\s")
+stream.group(pattern: "^\\s")
 
 // for each failed test filter corresponding stack trace with pattern of interest
-sc.process(onKey: "failure") { obj in
+stream.process(onKey: "failure") { obj in
     print("FAILED", obj["failure"])
     CLStream(obj["group"].arrayValue).grep(pattern: "at .*\\(Wsk.*\\)").run()
 }
 
-sc.run()
+stream.run()

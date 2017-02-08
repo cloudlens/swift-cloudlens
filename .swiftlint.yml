@@ -3,4 +3,3 @@ included:
   - CloudLensPlayground.playground
 disabled_rules:
   - line_length
-  - variable_name
