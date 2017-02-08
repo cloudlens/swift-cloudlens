@@ -33,7 +33,7 @@ sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", ob
 
 // nothing really happens until run is invoked
 sc.run()
-// observe the two output of the two actions are interleaved
+// observe that the outputs of the two actions are interleaved
 
 print("\n========== Count errors ==========")
 
@@ -72,17 +72,21 @@ print("\n========== Process example log file ==========")
 // stream text file line by line
 sc = CLStream(file: "log.txt")
 
-// detect failed test
+// detect and tag failed tests
 sc.process(onPattern: "^(?<failure>.*) > .* FAILED") { obj in print("FAILED:", obj["failure"]) }
 
 // compute running time of tests and report long running tests
 var start = 0.0
-sc.process(onPattern: "Starting test (?<desc>.*) at (?<start:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.*)") { obj in
+
+// parse timestamp into a time interval since 1970 (seconds)
+sc.process(onPattern: "Starting test (?<description>.*) at (?<start:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.{23})") { obj in
     start = obj["start"].doubleValue
 }
-sc.process(onPattern: "Finished test (?<desc>.*) at (?<end:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.*)") { obj in
+
+// report tests that run for more than 12 seconds
+sc.process(onPattern: "Finished test (?<description>.*) at (?<end:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>.{23})") { obj in
     obj["duration"].doubleValue = obj["end"].doubleValue - start
-    if obj["duration"].doubleValue > 12 { print(obj["duration"], "\t", obj["desc"]) }
+    if obj["duration"].doubleValue > 12 { print(obj["duration"], "\t", obj["description"]) }
 }
 
 // count failed tests
@@ -97,10 +101,10 @@ sc.process(onKey: EndOfStreamKey) { _ in print("Total Time:", totalTime, "second
 
 sc.run()
 
-// report long running tests relative to total execution time
+// report long running tests relative to total execution time (above 10%)
 sc.process(onKey: "duration") { obj in
-    obj["prop"].doubleValue = obj["duration"].doubleValue * 100.0 / totalTime
-    if obj["prop"].doubleValue > 10 { print("\(obj["prop"])%", obj["desc"]) }
+    obj["percentage"].doubleValue = obj["duration"].doubleValue * 100.0 / totalTime
+    if obj["percentage"].doubleValue > 10 { print("\(obj["percentage"])%", obj["description"]) }
 }
 
 sc.run()
@@ -116,16 +120,17 @@ extension CLStream {
     }
 
     // group objects according to pattern
+    // objects matching pattern are added to a "group" array in the most recent unmatched object
     @discardableResult func group(pattern: String) -> CLStream {
-        var group: JSON?
-        process(onPattern: pattern) { obj in // entry processes regex
-            group?["group"].append(newArrayElement: obj) // append entry to group array
-            obj = .null // suppress entry
+        var group: JSON? // most recent unmatched object
+        process(onPattern: pattern) { obj in // object matches pattern
+            group?["group"].append(newArrayElement: obj) // append object to "group" array
+            obj = .null // suppress object from stream
         }
-        process { obj in // remaining entries do not process regex
+        process { obj in // object does not match pattern
             let last = group ?? .null
-            group = obj
-            obj = last
+            group = obj // obj is new most recent unmatched object
+            obj = last // emit previous unmatched object
         }
         return process(onKey: EndOfStreamKey) { obj in obj = group ?? .null }
     }
@@ -134,7 +139,7 @@ extension CLStream {
 // group indented log lines (stack traces)
 sc.group(pattern: "^\\s")
 
-// for each failed test filter corresponding stack traces with pattern of interest
+// for each failed test filter corresponding stack trace with pattern of interest
 sc.process(onKey: "failure") { obj in
     print("FAILED", obj["failure"])
     CLStream(obj["group"].arrayValue).grep(pattern: "at .*\\(Wsk.*\\)").run()

@@ -33,7 +33,7 @@ sc.process(onPattern: "^error (?<error:Number>\\d+)") { obj in print("error", ob
 
 // nothing really happens until run is invoked
 sc.run()
-// observe the two output of the two actions are interleaved
+// observe that the outputs of the two actions are interleaved
 
 print("\n========== Count errors ==========")
 
