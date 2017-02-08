@@ -5,7 +5,7 @@
 
 CloudLens is a Swift library for processing machine-generated text streams such as log streams. CloudLens supports plain text as well as JSON-encoded streams.
 
-Thanks to [IBM’s Swift Sandbox](https://developer.ibm.com/swift/2015/12/03/introducing-the-ibm-swift-sandbox/), it is possible to try CloudLens online using this [link](https://swiftlang.ng.bluemix.net/#/repl?gitPackage=https://github.com/cloudlens/swift-cloudlens&swiftVersion=swift-3.0.2-RELEASE-ubuntu15.10). Simply press Play to run the example. The code editor is fully functional but the sandbox cannot access the network, so testing is limited to the supplied log file [log.txt](https://s3.amazonaws.com/archive.travis-ci.org/jobs/144778470/log.txt) originally produced by [Travis CI](https://travis-ci.org) from [Apache OpenWhisk](http://openwhisk.org).
+Thanks to [IBM’s Swift Sandbox](https://developer.ibm.com/swift/2015/12/03/introducing-the-ibm-swift-sandbox/), it is possible to try CloudLens online using this [link](https://swiftlang.ng.bluemix.net/#/repl?gitPackage=https://github.com/cloudlens/swift-cloudlens&swiftVersion=swift-3.0.2-RELEASE-ubuntu15.10). Simply press Play to run the example. The code editor is fully functional but the sandbox cannot access the network, so testing is limited to the supplied [log.txt](https://s3.amazonaws.com/archive.travis-ci.org/jobs/144778470/log.txt) file originally produced by [Travis CI](https://travis-ci.org) for [Apache OpenWhisk](http://openwhisk.org).
 
 CloudLens has been tested on macOS and Linux. CloudLens uses IBM’s fork of [SwiftyJSON](https://github.com/IBM-Swift/SwiftyJSON) for Linux compatibility.
 
