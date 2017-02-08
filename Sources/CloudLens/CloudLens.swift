@@ -252,12 +252,13 @@ public class CLStream {
 
     /// Iterates over the stream applying all processing stages to every object in the stream.
     ///
-    /// By default, the _run_ method accumulates the objects in the output stream into an array and returns the resulting array.
-    /// The input stream is replaced with the output stream, i.e., future processing stages will apply to the output stream.
-    /// On the other hand, if _history_ is set to false, the run method discards the output stream as it is produced and returns an empty array. The input stream is replaced with an empty stream.
+    /// By default, the output stream is preserved enabling further processing.
+    /// But if _history_ is set to false, the output stream is not preserved.
     ///
-    /// - Parameter history: whether to retain the output stream.
-    @discardableResult public func run(withHistory history: Bool = true) -> [JSON] {
+    /// - Parameter history: whether to preserve the output stream.
+    /// - Returns: _self_ to permit chaining processing stages.
+    /// - Complexity: The output stream is preserved by accumulating the stream elements into an array.
+    @discardableResult public func run(withHistory history: Bool = true) -> CLStream {
         if history {
             var jsonArray = [JSON]()
             while let json = stream() {
@@ -265,12 +266,11 @@ public class CLStream {
             }
             var slice = ArraySlice(jsonArray)
             stream = { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
-            return jsonArray
         } else {
             while stream() != nil {}
             stream = { nil }
-            return []
         }
+        return self
     }
 
     /// Adds a processing stage to the stream.
