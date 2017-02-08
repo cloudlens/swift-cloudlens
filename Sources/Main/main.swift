@@ -19,7 +19,6 @@
 import Foundation
 import SwiftyJSON
 import CloudLens
-import JavaScriptCore
 
 // construct a stream with four objects
 var stream = CLStream(messages: "error 42", "warning", "info ", "error 255")
