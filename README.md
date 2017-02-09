@@ -79,11 +79,17 @@ A CloudLens stream (an instance of the `CLStream` class) is a lazy sequence of J
 let stream = CLStream(messages: "error 42", "warning", "info", "error 255")
 ```
 
-The next example constructs a stream from an input file.
+The next example constructs a stream from a text file.
 Each line becomes a JSON object with a single field `"message"` that contains the line's text.
 
 ```swift
 let stream = CLStream(textFile: "log.txt")
+```
+
+The next example constructs a stream from a file containing an array of JSON objects.
+
+```swift
+let stream = CLStream(jsonFile: "array.json")
 ```
 
 In general, a stream can be constructed from any function of type `() -> JSON?`.

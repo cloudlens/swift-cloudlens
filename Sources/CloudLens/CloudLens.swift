@@ -214,6 +214,29 @@ public class CLStream {
         }
     }
 
+    /// Creates a new CLStream instance by reading a JSON object from a file.
+    ///
+    /// If the file contains a JSON array, then the array elements are streamed one at a time.
+    /// Otherwise the stream has a single element.
+    ///
+    /// - Parameter file: the name of the file.
+    public convenience init(jsonFile file: String) {
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: file))
+            let json = JSON(data: data)
+            if json.error != nil {
+                abort("Error parsing file \"\(file)\"")
+            }
+            if json.type == .array {
+                self.init(json.arrayValue)
+            } else {
+                self.init([json])
+            }
+        } catch {
+            abort("Error opening file \"\(file)\"")
+        }
+    }
+
     fileprivate func executeOnStream(onKey key: [JSONSubscriptType], _ action: @escaping (inout JSON) -> Void) {
         let last = stream
         var slice = ArraySlice([JSON]())
