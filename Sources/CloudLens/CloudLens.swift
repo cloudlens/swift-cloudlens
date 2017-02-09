@@ -312,7 +312,7 @@ public class CLStream {
     ///
     /// The _action_ can remove the current object in the stream by assigning JSON.null to it, for example: "`process { obj in obj = .null }`". It can replace the object with mutiple objects using the _emit_ method.
     ///
-    /// The _EndOfStreamKey_ may be used to defer an action until after the complete stream has been processed, for example: "`process(onKey: EndOfStream) { _ print(count) }`".
+    /// The key _CLKey.endofStream_ may be used to defer an action until after the complete stream has been processed, for example: "`process(onKey: CLKey.endOfStream) { _ print(count) }`".
     ///
     /// - Parameter pattern: the regular expression.
     /// - Parameter key: the path in the JSON object.

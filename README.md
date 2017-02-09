@@ -65,7 +65,7 @@ It includes a CloudLens playground to make it easy to experiment with CloudLens.
 open CloudLens.xcworkspace
 ```
 
-To build and run the example program in Xcode, make sure to select the “Main” target and activate the console.
+To build and run the example program in Xcode, make sure to select the “Main" target and activate the console.
 
 # Tutorial
 
@@ -73,14 +73,14 @@ A CloudLens program constructs and processes _streams_ of JSON objects. JSON sup
 
 ## Streams
 
-A CloudLens stream (an instance of the `CLStream` class) is a lazy sequence of JSON objects. A stream can be derived from various sources. The following code constructs a stream with four elements. Each stream element is a JSON object with a single field `message` of type String:
+A CloudLens stream (an instance of the `CLStream` class) is a lazy sequence of JSON objects. A stream can be derived from various sources. The following code constructs a stream with four elements. Each stream element is a JSON object with a single field `"message"` of type String:
 
 ```swift
-let stream = CLStream(messages: "error 42", "warning", "info", "error 255”)
+let stream = CLStream(messages: "error 42", "warning", "info", "error 255")
 ```
 
 The next example constructs a stream from an input file.
-Each line becomes a JSON object with a single field `message` that contains the line's text.
+Each line becomes a JSON object with a single field `"message"` that contains the line's text.
 
 ```swift
 let stream = CLStream(textFile: "log.txt")
@@ -193,7 +193,52 @@ stream.process { obj in obj = CLStream.emit([thisObject, thatObject]) }
 
 ## Patterns and Keys
 
-TODO
+Actions can be guarded by activation conditions.
+
+```swift
+stream.process(onPattern: "error", onKey: "message") { obj in print(obj) }
+```
+
+If a _key_ is specified, the action only executes for JSON objects that have a value for the given key. In addition, if a _pattern_ is specified, the field value must match the pattern. If a pattern is specified but no key, the key defaults to `"message"`. Objects that do not satisfy the activation condition are unaffected by the action.
+
+Keys can be [paths](https://github.com/IBM-Swift/SwiftyJSON#subscript) in JSON objects. Patterns can be simple strings or [regular expressions](https://developer.apple.com/reference/foundation/nsregularexpression).
+
+## Named Capture Groups
+
+A regular expression pattern cannot include numbered capture groups but it may include named capture groups. Upon a successful match, the JSON object is augmented with new fields that bind each group name to the corresponding substring in the match. For instance,
+
+```swift
+let stream = CLStream(messages: "error 42", "warning", "info", "error 255")
+stream.process(onPattern: "error (?<error>\\d+)") { obj in print(obj) }
+stream.run()
+```
+
+outputs:
+
+```swift
+{"error":"42","message":"error 42"}
+{"error":"255","message":"error 255"}
+```
+
+Named captured groups can be given an explicit type using the :_type_ syntax, for example  `"(?<error:Number>\\d+)"`. The supported types are `Number`, `String`, and `Date`, with `String` the implicit default. A `Date` type should include a Date format specification as in `"(?<date:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>^.{23})"`.
+
+## Deferred Actions
+
+The special key `CLKey.endOfStream` may be used to defer an action until after the complete stream has been processed:
+
+```swift
+let stream = CLStream(messages: "error 42", "warning", "info", "error 255")
+var count = 0;
+stream.process(onKey: "error") { _ in count += 1 }
+stream.process(onKey: CLKey.endOfStream) { _ in print(count, "error(s)") }
+stream.run()
+```
+
+outputs:
+
+```
+2 error(s)
+```
 
 
 # License
