@@ -9,4 +9,4 @@ xcode_scheme: Main
 osx_image: xcode8.2
 
 script:
-- xcodebuild clean build -project CloudLens.xcodeproj -scheme Main
+- xcodebuild clean build -project CloudLens.xcodeproj -alltargets
