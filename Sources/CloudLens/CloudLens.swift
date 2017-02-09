@@ -155,12 +155,21 @@ fileprivate typealias Group = (name: String, type: String?, format: String?)
 public class CLStream {
     fileprivate var stream: () -> JSON? = { nil }
 
+    /// Creates a new CLStream instance from a lazy sequence of JSON objects.
+    ///
+    /// The _generator_ should return nil to indicate the end of the stream.
+    ///
+    /// - Parameter generator: the sequence generator.
+    public init(_ generator: @escaping () -> JSON?) {
+        stream = generator
+    }
+
     /// Creates a new CLStream instance from the content of the array.
     ///
     /// - Parameter jsonArray: the array of JSON objects to stream.
-    public init(_ jsonArray: [JSON]) {
+    public convenience init(_ jsonArray: [JSON]) {
         var slice = ArraySlice(jsonArray)
-        stream = { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
+        self.init { slice.isEmpty ? nil as JSON? : slice.removeFirst() }
     }
 
     /// Creates a new CLStream instance from an array of messages.
@@ -168,9 +177,9 @@ public class CLStream {
     /// For each message m, a JSON object {"message":m} is added to the stream.
     ///
     /// - Parameter messages: the array of messages to stream.
-    public init(messages: [String]) {
+    public convenience init(messages: [String]) {
         var slice = ArraySlice(messages)
-        stream = { slice.isEmpty ? nil as JSON? : ["message": slice.removeFirst()] }
+        self.init { slice.isEmpty ? nil as JSON? : ["message": slice.removeFirst()] }
     }
 
     /// Creates a new CLStream instance from a list of messages.
@@ -187,11 +196,11 @@ public class CLStream {
     /// For each line m, a JSON object {"message":m} is added to the stream.
     ///
     /// - Parameter file: the name of the file.
-    public init(file: String) {
+    public convenience init(file: String) {
         guard let fd = fopen(file, "r") else {
             abort("Error opening file \"\(file)\"")
         }
-        stream = {
+        self.init {
             var line: UnsafeMutablePointer<Int8>?
             var linecap = 0
             defer { free(line) }
