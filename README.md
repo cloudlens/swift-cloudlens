@@ -18,13 +18,13 @@ CloudLens has been tested on macOS and Linux. CloudLens uses IBM’s fork of [Sw
 
 Clone the repository:
 
-```sh
+```bash
 git clone https://github.com/cloudlens/swift-cloudlens.git
 ```
 
 CloudLens is built using the Swift Package Manager. To build, execute in the root CloudLens folder:
 
-```sh
+```bash
 swift build --config release
 ```
 
@@ -35,7 +35,7 @@ The build process automatically fetches required dependencies from GitHub.
 The build process automatically compiles a simple test program available in [Sources/Main/main.swift](https://github.com/cloudlens/swift-cloudlens/blob/master/Sources/Main/main.swift).
 To run the example program, execute:
 
-```sh
+```bash
 .build/release/Main
 ```
 
@@ -43,7 +43,7 @@ To run the example program, execute:
 
 To load CloudLens in the Swift REPL, execute in the root CloudLens folder:
 
-```sh
+```bash
 swift -I.build/release -L.build/release -lCloudLens
 ```
 
@@ -60,7 +60,7 @@ To build the necessary library on Linux, please follow instructions at the end o
 A workspace is provided to support CloudLens development in Xcode.
 It includes a CloudLens playground to make it easy to experiment with CloudLens.
 
-```sh
+```bash
 open CloudLens.xcworkspace
 ```
 
@@ -125,7 +125,7 @@ stream.run()
 
 outputs:
 
-```
+```json
 1 {"message":"foo"}
 2 {"message":"foo"}
 1 {"message":"bar"}
