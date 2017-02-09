@@ -82,7 +82,7 @@ The next example constructs a stream from an input file.
 Each line becomes a JSON object with a single field `message` that contains the line's text.
 
 ```swift
-let stream = CLStream(textFile: “log.txt”)
+let stream = CLStream(textFile: "log.txt")
 ```
 
 In general, a stream can be constructed from any function of type `() -> JSON?`.
@@ -97,7 +97,7 @@ For instance, this code specifies an action to be executed on all stream element
 stream.process { obj in print(obj) }
 ```
 
-But nothing really happens until `run` is invoked:
+But nothing happens until `run` is invoked:
 
 ```swift
 stream.run()
@@ -106,15 +106,24 @@ stream.run()
 The two methods return `self` so the following syntax is also possible:
 
 ```swift
-stream.process { obj in print(obj) }.run()
+CLStream(messages: "error 42", "warning", "info", "error 255")
+	.process { obj in print(obj) }
+	.run()
+```
+
+This example outputs:
+
+```json
+{"message":"error 42"}
+{"message":"warning"}
+{"message":"info"}
+{"message":"error 255"}
 ```
 
 ## Execution Order
 
 Stream elements are processed in order.
-When multiple actions are specified, actions are executed in order for each stream element. Moreover, all actions for a given stream element are executed before the next stream element is considered.
-
-For instance the following code
+When multiple actions are specified, actions are executed in order for each stream element. Moreover, all actions for a given stream element are executed before the next stream element is considered. For instance this code
 
 ```swift
 let stream = CLStream(messages: "foo", "bar")
@@ -131,4 +140,51 @@ outputs:
 1 {"message":"bar"}
 2 {"message":"bar"}
 ```
+
+## Chaining
+
+By default, `run` preserves the output stream, which becomes the input stream for subsequent actions. For instance this code
+
+```swift
+let stream = CLStream(messages: "foo", "bar")
+stream.process { obj in print(1, obj) }
+stream.run()
+stream.process { obj in print(2, obj) }
+stream.run()
+```
+
+outputs:
+
+```json
+1 {"message":"foo"}
+1 {"message":"bar"}
+2 {"message":"foo"}
+2 {"message":"bar"}
+```
+
+Alternatively, the following invocation of `run` eagerly discards the output stream elements.
+
+```swift
+stream.run(withHistory: false)
+```
+
+## Mutations
+
+It is possible to mutate, replace, or remove the stream element being processed. 
+
+```swift
+// to mutate the stream element
+stream.process { obj in obj["timestamp"] = String(describing: Date()) }
+
+// to remove the element from the stream
+stream.process { obj in obj = .null }
+
+// to replace the element in the stream
+stream.process { obj in obj = otherObject }
+
+// to replace one stream element with multiple objects
+stream.process { obj in obj = CLStream.emit([thisObject, thatObject]) }
+```
+
+## Patterns and Keys
 
