@@ -13,6 +13,7 @@ CloudLens has been tested on macOS and Linux. CloudLens uses IBM’s fork of [Sw
 
 * [Installation](#installation)
 * [Tutorial](#tutorial)
+* [License](#license)
 
 # Installation
 
@@ -68,11 +69,11 @@ To build and run the example program in Xcode, make sure to select the “Main�
 
 # Tutorial
 
-A CloudLens program constructs and processes _streams_.
+A CloudLens program constructs and processes _streams_ of JSON objects. JSON support is provided by the [SwiftyJSON](https://github.com/IBM-Swift/SwiftyJSON) library.
 
 ## Streams
 
-A CloudLens stream is a lazy sequence of JSON objects. A stream can be derived from various sources. The following code constructs a stream with four elements. Each stream element is a JSON object with a single field `message` of type String:
+A CloudLens stream (an instance of the `CLStream` class) is a lazy sequence of JSON objects. A stream can be derived from various sources. The following code constructs a stream with four elements. Each stream element is a JSON object with a single field `message` of type String:
 
 ```swift
 let stream = CLStream(messages: "error 42", "warning", "info", "error 255”)
@@ -86,6 +87,8 @@ let stream = CLStream(textFile: "log.txt")
 ```
 
 In general, a stream can be constructed from any function of type `() -> JSON?`.
+
+Streams are constructed lazily when possible. For example, for stream constructed from a text file, the file is read line by line, as needed.
 
 ## Actions
 
@@ -162,11 +165,13 @@ outputs:
 2 {"message":"bar"}
 ```
 
-Alternatively, the following invocation of `run` eagerly discards the output stream elements.
+Alternatively, the following invocation of `run` discards the output stream elements as they are produced:
 
 ```swift
 stream.run(withHistory: false)
 ```
+
+The later is recommended to avoid buffering the entire stream.
 
 ## Mutations
 
@@ -188,3 +193,13 @@ stream.process { obj in obj = CLStream.emit([thisObject, thatObject]) }
 
 ## Patterns and Keys
 
+TODO
+
+
+# License
+
+Copyright 2015-2017 IBM Corporation
+
+Licensed under the [Apache License, Version 2.0 (the "License")](http://www.apache.org/licenses/LICENSE-2.0.html).
+
+Unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an "as is" basis, without warranties or conditions of any kind, either express or implied. See the license for the specific language governing permissions and limitations under the license.
