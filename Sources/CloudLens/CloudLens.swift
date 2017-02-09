@@ -134,7 +134,8 @@ fileprivate typealias Group = (name: String, type: String?, format: String?)
 
 /// A CloudLens stream is a lazy sequence of JSON objects.
 ///
-/// The _process_ method adds a processing stage to the stream, possibly transforming, adding, or removing objects from the stream.
+/// The _process_ method adds a processing stage to the stream, possibly transforming,
+/// adding, or removing objects from the stream.
 /// Processing is delayed until the _run_ method is invoked on the Stream instance.
 /// Each object in the stream goes through every processing stage before processing begins for the next object.
 ///
@@ -284,14 +285,18 @@ public class CLStream {
 
     /// Adds a processing stage to the stream.
     ///
-    /// The _process_ method invokes an action on each object in the stream that satisfies the given predicate. Objects that do not satisfy the predicate are unaffected.
+    /// The _process_ method invokes an action on each object in the stream that satisfies the given predicate.
+    /// Objects that do not satisfy the predicate are unaffected.
     ///
     /// The predicate is optional and assumed to be true if absent. The predicate is composed of a _pattern_ and a _key_.
     /// If only a _pattern_ is specified the _key_ defaults to "message".
     /// If only a _key_ is specified the _pattern_ defaults to the empty string.
-    /// The predicates tests whether the _key_ is a valid path in the JSON object and that the associated String value matches the regular expression _pattern_.
+    /// The predicates tests whether the _key_ is a valid path in the JSON object and
+    /// that the associated String value matches the regular expression _pattern_.
     ///
-    /// The _pattern_ may define named groups. Upon a successful match, the JSON objects is augmented with new fields that bind each group name to the corresponding substring in the match.
+    /// The _pattern_ may define named groups.
+    /// Upon a successful match, the JSON objects is augmented with new fields that bind each group name
+    /// to the corresponding substring in the match.
     ///
     /// # Example:
     /// ````
@@ -310,9 +315,11 @@ public class CLStream {
     /// String is the default type.
     /// A date format can be specified, for example: `"(?<date:Date[yyyy-MM-dd' 'HH:mm:ss.SSS]>^.{23})"`.
     ///
-    /// The _action_ can remove the current object in the stream by assigning JSON.null to it, for example: "`process { obj in obj = .null }`". It can replace the object with mutiple objects using the _emit_ method.
+    /// The _action_ can remove the current object in the stream by assigning JSON.null to it, for example:
+    /// "`process { obj in obj = .null }`". It can replace the object with mutiple objects using the _emit_ method.
     ///
-    /// The key _CLKey.endofStream_ may be used to defer an action until after the complete stream has been processed, for example: "`process(onKey: CLKey.endOfStream) { _ print(count) }`".
+    /// The key _CLKey.endofStream_ may be used to defer an action until after the complete stream has been processed,
+    /// for example: "`process(onKey: CLKey.endOfStream) { _ print(count) }`".
     ///
     /// - Parameter pattern: the regular expression.
     /// - Parameter key: the path in the JSON object.
