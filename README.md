@@ -1,8 +1,8 @@
 # The CloudLens Library for Swift
 
 [![Travis](https://travis-ci.org/cloudlens/swift-cloudlens.svg?branch=master)](https://travis-ci.org/cloudlens/swift-cloudlens)
-![Swift](https://img.shields.io/badge/swift-3.0-brightgreen.svg)
-![Platform](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-333333.svg)
+![Swift](https://img.shields.io/badge/swift-v3.0.x-blue.svg)
+![OS](https://img.shields.io/badge/os-macOS%20%7C%20Linux-lightgray.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 CloudLens is a Swift library for processing machine-generated text streams such as log streams. CloudLens supports plain text as well as JSON-encoded streams.
