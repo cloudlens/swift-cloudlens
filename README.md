@@ -240,6 +240,27 @@ outputs:
 2 error(s)
 ```
 
+A deferred action, may append new elements at the end of the stream:
+
+```swift
+stream.process(onKey: CLKey.endOfStream) { obj in obj = ["message": "\(count) error(s)"] }
+```
+
+## Lenses
+
+CloudLens can be extentend with new processing _lenses_ easily, for example:
+
+```swift
+extension CLStream {
+    @discardableResult func grep(_ pattern: String) -> CLStream {
+        return process(onPattern: pattern) { obj in print(obj["message"]) }
+    }
+}
+
+CLStream(messages: "error 42", "warning", "info", "error 255")
+	.grep("error")
+	.run()
+```
 
 # License
 
