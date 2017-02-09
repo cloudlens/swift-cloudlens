@@ -1,5 +1,7 @@
 # The CloudLens Library for Swift
 
+![Travis](https://travis-ci.org/cloudlens/swift-cloudlens.svg?branch=master)
+![Swift](https://img.shields.io/badge/swift-3.0-brightgreen.svg)
 ![Platform](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-333333.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -16,11 +18,15 @@ CloudLens has been tested on macOS and Linux. CloudLens uses IBM’s fork of [Sw
 
 Clone the repository:
 
-`git clone https://github.com/cloudlens/swift-cloudlens.git`
+```sh
+git clone https://github.com/cloudlens/swift-cloudlens.git
+```
 
 CloudLens is built using the Swift Package Manager. To build, execute in the root CloudLens folder:
 
-```swift build --config release```
+```sh
+swift build --config release
+```
 
 The build process automatically fetches required dependencies from GitHub. 
 
@@ -29,17 +35,23 @@ The build process automatically fetches required dependencies from GitHub.
 The build process automatically compiles a simple test program available in [Sources/Main/main.swift](https://github.com/cloudlens/swift-cloudlens/blob/master/Sources/Main/main.swift).
 To run the example program, execute:
 
-`.build/release/Main`
+```sh
+.build/release/Main
+```
 
 ## Run-Eval-Print Loop
 
 To load CloudLens in the Swift REPL, execute in the root CloudLens folder:
 
-`swift -I.build/release -L.build/release -lCloudLens`
+```sh
+swift -I.build/release -L.build/release -lCloudLens
+```
 
 Then import the CloudLens module with:
 
-`import CloudLens`
+```swift
+import CloudLens
+```
 
 To build the necessary library on Linux, please follow instructions at the end of [Package.swift](https://github.com/cloudlens/swift-cloudlens/blob/master/Package.swift).
 
@@ -48,9 +60,75 @@ To build the necessary library on Linux, please follow instructions at the end o
 A workspace is provided to support CloudLens development in Xcode.
 It includes a CloudLens playground to make it easy to experiment with CloudLens.
 
-`open CloudLens.xcworkspace`
+```sh
+open CloudLens.xcworkspace
+```
 
-To build and run the example program in Xcode, make sure to select the “Main” scheme and activate the console.
+To build and run the example program in Xcode, make sure to select the “Main” target and activate the console.
 
 # Tutorial
+
+A CloudLens program constructs and processes _streams_.
+
+## Streams
+
+A CloudLens stream is a lazy sequence of JSON objects. A stream can be derived from various sources. The following code constructs a stream with four elements. Each stream element is a JSON object with a single field `message` of type String:
+
+```swift
+let stream = CLStream(messages: "error 42", "warning", "info", "error 255”)
+```
+
+The next example constructs a stream from an input file.
+Each line becomes a JSON object with a single field `message` that contains the line's text.
+
+```swift
+let stream = CLStream(textFile: “log.txt”)
+```
+
+In general, a stream can be constructed from any function of type `() -> JSON?`.
+
+## Actions
+
+The `process` method of the `CLStream` class registers actions to be executed on the stream elements. The `run` method triggers the execution of these actions.
+
+For instance, this code specifies an action to be executed on all stream elements:
+
+```swift
+stream.process { obj in print(obj) }
+```
+
+But nothing really happens until `run` is invoked:
+
+```swift
+stream.run()
+```
+
+The two methods return `self` so the following syntax is also possible:
+
+```swift
+stream.process { obj in print(obj) }.run()
+```
+
+## Execution Order
+
+Stream elements are processed in order.
+When multiple actions are specified, actions are executed in order for each stream element. Moreover, all actions for a given stream element are executed before the next stream element is considered.
+
+For instance the following code
+
+```swift
+let stream = CLStream(messages: "foo", "bar")
+stream.process { obj in print(1, obj) }
+stream.process { obj in print(2, obj) }
+stream.run()
+```
+
+outputs:
+
+```
+1 {"message":"foo"}
+2 {"message":"foo"}
+1 {"message":"bar"}
+2 {"message":"bar"}
+```
 

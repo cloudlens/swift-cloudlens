@@ -70,7 +70,7 @@ stream.run()
 print("\r\n========== Process example log file ==========")
 
 // stream text file line by line
-stream = CLStream(file: "log.txt")
+stream = CLStream(textFile: "log.txt")
 
 // detect and tag failed tests
 stream.process(onPattern: "^(?<failure>.*) > .* FAILED") { obj in print("FAILED:", obj["failure"]) }

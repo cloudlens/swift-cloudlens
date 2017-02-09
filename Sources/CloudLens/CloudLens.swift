@@ -140,10 +140,10 @@ fileprivate typealias Group = (name: String, type: String?, format: String?)
 ///
 /// # Example:
 /// ````
-/// var sc = CLStream(messages: "foo", "bar")
-/// sc.process { obj in print(1, obj) }
-/// sc.process { obj in print(2, obj) }
-/// sc.run()
+/// let stream = CLStream(messages: "foo", "bar")
+/// stream.process { obj in print(1, obj) }
+/// stream.process { obj in print(2, obj) }
+/// stream.run()
 /// ````
 /// # Output:
 /// ````
@@ -196,7 +196,7 @@ public class CLStream {
     /// For each line m, a JSON object {"message":m} is added to the stream.
     ///
     /// - Parameter file: the name of the file.
-    public convenience init(file: String) {
+    public convenience init(textFile file: String) {
         guard let fd = fopen(file, "r") else {
             abort("Error opening file \"\(file)\"")
         }
@@ -295,9 +295,9 @@ public class CLStream {
     ///
     /// # Example:
     /// ````
-    /// var sc = CLStream(messages: "warning", "error 42")
-    /// sc.process(onPattern: "error (?<error>\\d+)") { obj in print(obj) }
-    /// sc.run()
+    /// let stream = CLStream(messages: "warning", "error 42")
+    /// stream.process(onPattern: "error (?<error>\\d+)") { obj in print(obj) }
+    /// stream.run()
     /// ````
     /// # Output:
     /// ````
@@ -397,7 +397,7 @@ public class CLStream {
     /// # Example:
     /// Use _emit_ to repeat every object in the stream.
     /// ````
-    /// sc.process { obj in
+    /// stream.process { obj in
     ///     obj = Stream.emit([obj, obj])
     /// }
     /// ````
