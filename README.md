@@ -7,6 +7,12 @@
 
 CloudLens is a Swift library for processing machine-generated text streams such as log streams. CloudLens supports plain text as well as JSON-encoded streams.
 
+Analyzing logs is challenging. Logs contain a mix of text and semi-structured meta-data such as timestamps. Logs are often aggregated from mutiple sources with under-specified, heterogeneous formats. Parsing techniques based on schemas or grammars are not practical. In constrast, CloudLens is built on the premise that parsing need not be exhaustive and relies on pattern matching for data extraction. Matches can augment the raw text with structured attributes and trigger actions. For instance, a single line of CloudLens code can detect error messages in a log stream, extract the error code, and count errors.
+
+```swift
+stream.process(onPattern: "error (?<error>\\d+)") { _ in errorCount += 1 }
+```
+
 Thanks to [IBM’s Swift Sandbox](https://developer.ibm.com/swift/2015/12/03/introducing-the-ibm-swift-sandbox/), it is possible to try CloudLens online using this [link](https://swiftlang.ng.bluemix.net/#/repl?gitPackage=https://github.com/cloudlens/swift-cloudlens&swiftVersion=swift-3.0.2-RELEASE-ubuntu15.10). Simply press Play to run the example. The code editor is fully functional but the sandbox cannot access the network, so testing is limited to the supplied [log.txt](https://s3.amazonaws.com/archive.travis-ci.org/jobs/144778470/log.txt) file originally produced by [Travis CI](https://travis-ci.org) for [Apache OpenWhisk](http://openwhisk.org).
 
 CloudLens has been tested on macOS and Linux. CloudLens uses IBM’s fork of [SwiftyJSON](https://github.com/IBM-Swift/SwiftyJSON) for Linux compatibility.
@@ -221,7 +227,7 @@ stream.run()
 
 outputs:
 
-```swift
+```json
 {"error":"42","message":"error 42"}
 {"error":"255","message":"error 255"}
 ```
