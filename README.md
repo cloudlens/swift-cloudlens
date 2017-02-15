@@ -7,7 +7,7 @@
 
 CloudLens is a Swift library for processing machine-generated text streams such as log streams. CloudLens supports plain text as well as JSON-encoded streams.
 
-Analyzing logs is challenging. Logs contain a mix of text and semi-structured meta-data such as timestamps. Logs are often aggregated from mutiple sources with under-specified, heterogeneous formats. Parsing techniques based on schemas or grammars are not practical. In constrast, CloudLens is built on the premise that parsing need not be exhaustive and relies on pattern matching for data extraction. Matches can augment the raw text with structured attributes and trigger actions. For instance, a single line of CloudLens code can detect error messages in a log stream, extract the error code for future analyzing, and count errors.
+Analyzing logs is challenging. Logs contain a mix of text and semi-structured meta-data such as timestamps. Logs are often aggregated from multiple sources with under-specified, heterogeneous formats. Parsing techniques based on schemas or grammars are not practical. In contrast, CloudLens is built on the premise that parsing need not be exhaustive and relies on pattern matching for data extraction. Matches can augment the raw text with structured attributes and trigger actions. For instance, a single line of CloudLens code can detect error messages in a log stream, extract the error code for future analyzing, and count errors.
 
 ```swift
 stream.process(onPattern: "error (?<error:Number>\\d+)") { _ in errorCount += 1 }
@@ -260,7 +260,7 @@ stream.process(onKey: CLKey.endOfStream) { obj in obj = ["message": "\(count) er
 
 ## Lenses
 
-CloudLens can be extentend with new processing _lenses_ easily, for example:
+CloudLens can be extented with new processing _lenses_ easily, for example:
 
 ```swift
 extension CLStream {
